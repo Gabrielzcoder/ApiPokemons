@@ -5,6 +5,7 @@ app.use(express.json());
 
 let pokemons = [
     {
+        id: 1,
         nome: "Gyarados",
         tipo: ["Water", "Flying"],
         altura_m: 6.5,
@@ -13,6 +14,7 @@ let pokemons = [
         geracao: 1
     },
     {
+        id: 2,
         nome: "Golisopod",
         tipo: ["Bug", "Water"],
         altura_m: 2.0,
@@ -21,6 +23,7 @@ let pokemons = [
         geracao: 7
     },
     {
+        id: 3,
         nome: "Charizard",
         tipo: ["Fire", "Flying"],
         altura_m: 1.7,
@@ -29,6 +32,7 @@ let pokemons = [
         geracao: 1
     },
     {
+        id: 4,
         nome: "Garchomp",
         tipo: ["Dragon", "Ground"],
         altura_m: 1.9,
@@ -37,6 +41,7 @@ let pokemons = [
         geracao: 4
     },
     {
+        id: 5,
         nome: "Aggron",
         tipo: ["Steel", "Rock"],
         altura_m: 2.1,
@@ -45,6 +50,7 @@ let pokemons = [
         geracao: 3
     },
     {
+        id: 6,
         nome: "Ceruledge",
         tipo: ["Fire", "Ghost"],
         altura_m: 1.6,
@@ -53,6 +59,7 @@ let pokemons = [
         geracao: 9
     },
     {
+        id: 7,
         nome: "Rillaboom",
         tipo: ["Grass"],
         altura_m: 2.1,
@@ -61,6 +68,7 @@ let pokemons = [
         geracao: 8
     },
     {
+        id: 8,
         nome: "Absol",
         tipo: ["Dark"],
         altura_m: 1.2,
@@ -69,6 +77,7 @@ let pokemons = [
         geracao: 3
     },
     {
+        id: 9,
         nome: "Revavroom",
         tipo: ["Steel", "Poison"],
         altura_m: 1.8,
@@ -77,6 +86,7 @@ let pokemons = [
         geracao: 9
     },
     {
+        id: 10,
         nome: "Kingdra",
         tipo: ["Water", "Dragon"],
         altura_m: 1.8,
@@ -85,6 +95,8 @@ let pokemons = [
         geracao: 2
     }
 ];
+
+let nextId = pokemons.length + 1;
 
 app.listen(PORT, () =>{
     console.log(`Servidor rodando na porta ${PORT}`);
@@ -157,12 +169,71 @@ app.get("/pokemons", (req, res) => {
 });
 
 app.post("/pokemons", (req, res) => {
-    const novoPokemon = req.body;
+    const body = req.body
+    const novoPokemon = {
+        id: nextId,
+        nome: body.nome,
+        tipo: body.tipo,
+        altura_m: body.altura_m,
+        peso_kg: body.peso_kg,
+        habilidades: body.habilidades,
+        geracao: body.geracao
+    }
+
+    nextId++;
 
     pokemons.push(novoPokemon);
 
     res.status(201).json({
         mensagem: "Pokemon criado com sucesso",
         pokemon: novoPokemon
+    });
+});
+
+app.put("/pokemons/:id", (req, res) =>{
+    const id = parseInt(req.params.id);
+    const body = req.body;
+
+    const index = pokemons.findIndex( p =>{
+        return p.id === id;
+    });
+
+    if (index === -1) {
+        return res.status(404).json({
+            mensagem: "Pokemon não encontrado"
+        });
+    }
+
+    if (body.nome) pokemons[index].nome = body.nome;
+    if (body.tipo) pokemons[index].tipo = body.tipo;
+    if (body.altura_m) pokemons[index].altura_m = body.altura_m;
+    if (body.peso_kg) pokemons[index].peso_kg = body.peso_kg;
+    if (body.habilidades) pokemons[index].habilidades = body.habilidades;
+    if (body.geracao) pokemons[index].geracao = body.geracao;
+
+    res.json({
+        mensagem: "Pokemon atualizado com sucesso",
+        pokemon: pokemons[index]
+    });
+});
+
+app.delete("/pokemons/:id", (req, res) => {
+    const id = parseInt(req.params.id);
+
+    const index = pokemons.findIndex(p => p.id === id);
+
+    if (index === -1) {
+        return res.status(404).json({
+            mensagem: "Pokemon não encontrado"
+        });
+    }
+
+    const pokemonRemovido = pokemons[index];
+
+    pokemons.splice(index, 1);
+
+    res.json({
+        mensagem: "Pokemon removido com sucesso",
+        pokemon: pokemonRemovido
     });
 });
