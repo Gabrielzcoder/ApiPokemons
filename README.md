@@ -227,7 +227,7 @@ Utilizando JOIN para buscar os favoritos de um usuário.
 
 ---
 
-## 📮 Testes com Postman
+# Testes com Postman
 
 Para testar a API:
 
