@@ -1,0 +1,219 @@
+{
+  "info": {
+    "_postman_id": "58fa750a-ba69-44e9-b39c-585fa489b1ed",
+    "name": "Pokemon API",
+    "description": "Collection para testar a API de Pokemons com JWT",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "53370205",
+    "_collection_link": "https://go.postman.co/collection/53370205-58fa750a-ba69-44e9-b39c-585fa489b1ed?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Criar Usuario",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"frootz\",\n  \"senha\": \"123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/usuarios",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "usuarios"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"frootz\",\n  \"senha\": \"123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Listar Pokemons",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/pokemons",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "pokemons"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Criar Pokemon",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"Pikachu\",\n  \"tipo\": [\"Electric\"],\n  \"altura_m\": 0.4,\n  \"peso_kg\": 6.0,\n  \"habilidades\": [\"Static\"],\n  \"geracao\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/pokemons",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "pokemons"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Atualizar Pokemon",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"Pikachu Updated\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/pokemons/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "pokemons",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Deletar Pokemon",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/pokemons/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "pokemons",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Adicionar Favorito",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pokemon_id\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/favoritos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "favoritos"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Listar Favoritos",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/usuarios/1/favoritos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "usuarios",
+            "1",
+            "favoritos"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ]
+}
