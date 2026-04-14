@@ -1,239 +1,235 @@
 const express = require('express');
+const db = require('./database');
 const app = express();
 const PORT = 3000;
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const SECRET = "segredo_super_secreto";
+
 app.use(express.json());
 
-let pokemons = [
-    {
-        id: 1,
-        nome: "Gyarados",
-        tipo: ["Water", "Flying"],
-        altura_m: 6.5,
-        peso_kg: 235.0,
-        habilidades: ["Intimidate", "Moxie"],
-        geracao: 1
-    },
-    {
-        id: 2,
-        nome: "Golisopod",
-        tipo: ["Bug", "Water"],
-        altura_m: 2.0,
-        peso_kg: 108.0,
-        habilidades: ["Emergency Exit"],
-        geracao: 7
-    },
-    {
-        id: 3,
-        nome: "Charizard",
-        tipo: ["Fire", "Flying"],
-        altura_m: 1.7,
-        peso_kg: 90.5,
-        habilidades: ["Blaze", "Solar Power"],
-        geracao: 1
-    },
-    {
-        id: 4,
-        nome: "Garchomp",
-        tipo: ["Dragon", "Ground"],
-        altura_m: 1.9,
-        peso_kg: 95.0,
-        habilidades: ["Sand Veil", "Rough Skin"],
-        geracao: 4
-    },
-    {
-        id: 5,
-        nome: "Aggron",
-        tipo: ["Steel", "Rock"],
-        altura_m: 2.1,
-        peso_kg: 360.0,
-        habilidades: ["Sturdy", "Rock Head", "Heavy Metal"],
-        geracao: 3
-    },
-    {
-        id: 6,
-        nome: "Ceruledge",
-        tipo: ["Fire", "Ghost"],
-        altura_m: 1.6,
-        peso_kg: 62.0,
-        habilidades: ["Flash Fire", "Weak Armor"],
-        geracao: 9
-    },
-    {
-        id: 7,
-        nome: "Rillaboom",
-        tipo: ["Grass"],
-        altura_m: 2.1,
-        peso_kg: 90.0,
-        habilidades: ["Overgrow", "Grassy Surge"],
-        geracao: 8
-    },
-    {
-        id: 8,
-        nome: "Absol",
-        tipo: ["Dark"],
-        altura_m: 1.2,
-        peso_kg: 47.0,
-        habilidades: ["Pressure", "Super Luck", "Justified"],
-        geracao: 3
-    },
-    {
-        id: 9,
-        nome: "Revavroom",
-        tipo: ["Steel", "Poison"],
-        altura_m: 1.8,
-        peso_kg: 120.0,
-        habilidades: ["Overcoat", "Filter"],
-        geracao: 9
-    },
-    {
-        id: 10,
-        nome: "Kingdra",
-        tipo: ["Water", "Dragon"],
-        altura_m: 1.8,
-        peso_kg: 152.0,
-        habilidades: ["Swift Swim", "Sniper", "Damp"],
-        geracao: 2
-    }
-];
-
-let nextId = pokemons.length + 1;
-
-app.listen(PORT, () =>{
+app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
-})
-
-app.get("/", (req, res) => {
-    res.send('Olá')
-})
+});
 
 app.get("/pokemons", (req, res) => {
-    let resultado = pokemons;
-    console.log(req.query);
-    const { tipo, geracao, pesoMax, pesoMin, nome, altMax, altMin, habilidades } = req.query;
+    const { tipo, geracao, nome } = req.query;
+
+    let query = "SELECT * FROM pokemons WHERE 1=1";
+    let params = [];
 
     if (tipo) {
-        resultado = resultado.filter(p =>
-            p.tipo.some(t => t.toLowerCase() === tipo.toLowerCase())
-    );
-    }
-
-    if (habilidades) {
-        resultado = resultado.filter(p =>
-            p.habilidades.some(t => t.toLowerCase() === habilidades.toLowerCase())
-        );
+        query += " AND tipo LIKE ?";
+        params.push(`%${tipo}%`);
     }
 
     if (geracao) {
-        resultado = resultado.filter(p =>
-            p.geracao === parseInt(geracao)
-    );
-    }
-
-    if (pesoMax) {
-        resultado = resultado.filter(p =>
-            p.peso_kg <= parseFloat(pesoMax)
-    );
-    }
-
-    if (pesoMin) {
-        resultado = resultado.filter(p =>
-            p.peso_kg >= parseFloat(pesoMin)
-        )
+        query += " AND geracao = ?";
+        params.push(geracao);
     }
 
     if (nome) {
-        resultado = resultado.filter(p =>
-            p.nome.toLowerCase().includes(nome.toLowerCase())
-    );
+        query += " AND nome LIKE ?";
+        params.push(`%${nome}%`);
     }
 
-    if (altMax) {
-        resultado = resultado.filter(p =>
-            p.altura_m <= parseFloat(altMax)
-        )
-    }
+    const pokemons = db.prepare(query).all(...params);
 
-    if (altMin) {
-        resultado = resultado.filter(p =>
-            p.altura_m >= parseFloat(altMin)
-        )
-    }
+    const parsed = pokemons.map(p => ({
+        ...p,
+        tipo: JSON.parse(p.tipo),
+        habilidades: JSON.parse(p.habilidades)
+    }));
 
-    if (resultado.length === 0) {
-        return res.status(404).json({
-            mensagem: "Nenhum pokemon encontrado com esses filtros"
-        })
-    }
+    res.json(parsed);
+});
 
-    res.json(resultado);
+app.get("/usuarios", (req, res) => {
+    const usuarios = db.prepare("SELECT * FROM usuarios").all();
+    res.json(usuarios);
+});
+
+app.get("/usuarios/:id/favoritos", auth, (req, res) => {
+    const userId = req.params.id;
+
+    const result = db.prepare(`
+        SELECT pokemons.*
+        FROM favoritos
+        JOIN pokemons ON favoritos.pokemon_id = pokemons.id
+        WHERE favoritos.usuario_id = ?
+    `).all(userId);
+
+    const parsed = result.map(p => ({
+        ...p,
+        tipo: JSON.parse(p.tipo),
+        habilidades: JSON.parse(p.habilidades)
+    }));
+
+    res.json(parsed);
 });
 
 app.post("/pokemons", (req, res) => {
-    const body = req.body
-    const novoPokemon = {
-        id: nextId,
-        nome: body.nome,
-        tipo: body.tipo,
-        altura_m: body.altura_m,
-        peso_kg: body.peso_kg,
-        habilidades: body.habilidades,
-        geracao: body.geracao
-    }
+    const nome = req.body.nome;
+    const tipo = req.body.tipo;
+    const altura_m = req.body.altura_m;
+    const peso_kg = req.body.peso_kg;
+    const habilidades = req.body.habilidades;
+    const geracao = req.body.geracao;
 
-    nextId++;
+    const result = db.prepare(`
+        INSERT INTO pokemons (nome, tipo, altura_m, peso_kg, habilidades, geracao)
+        VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+        nome,
+        JSON.stringify(tipo),
+        altura_m,
+        peso_kg,
+        JSON.stringify(habilidades),
+        geracao
+    );
 
-    pokemons.push(novoPokemon);
+    const novoPokemon = db.prepare(
+        "SELECT * FROM pokemons WHERE id = ?"
+    ).get(result.lastInsertRowid);
 
     res.status(201).json({
         mensagem: "Pokemon criado com sucesso",
-        pokemon: novoPokemon
+        pokemon: {
+            id: novoPokemon.id,
+            nome: novoPokemon.nome,
+            tipo: JSON.parse(novoPokemon.tipo),
+            altura_m: novoPokemon.altura_m,
+            peso_kg: novoPokemon.peso_kg,
+            habilidades: JSON.parse(novoPokemon.habilidades),
+            geracao: novoPokemon.geracao
+        }
     });
 });
 
-app.put("/pokemons/:id", (req, res) =>{
+app.post("/favoritos", auth, (req, res) => {
+    const pokemon_id = req.body.pokemon_id;
+
+    db.prepare(`
+        INSERT INTO favoritos (usuario_id, pokemon_id)
+        VALUES (?, ?)
+    `).run(req.user.id, pokemon_id);
+
+    res.status(201).json({ mensagem: "Favorito adicionado" });
+});
+
+app.post("/usuarios", async (req, res) => {
+    const { nome, senha } = req.body;
+
+    if (!nome || !senha) {
+        return res.status(400).json({ mensagem: "Nome e senha obrigatórios" });
+    }
+
+    const hash = await bcrypt.hash(senha, 10);
+
+    const result = db.prepare(`
+        INSERT INTO usuarios (nome, senha)
+        VALUES (?, ?)
+    `).run(nome, hash);
+
+    res.status(201).json({ mensagem: "Usuário criado" });
+});
+
+app.post("/login", async (req, res) => {
+    const { nome, senha } = req.body;
+
+    const user = db.prepare(`
+        SELECT * FROM usuarios WHERE nome = ?
+    `).get(nome);
+
+    if (!user) {
+        return res.status(404).json({ mensagem: "Usuário não encontrado" });
+    }
+
+    const senhaValida = await bcrypt.compare(senha, user.senha);
+
+    if (!senhaValida) {
+        return res.status(401).json({ mensagem: "Senha inválida" });
+    }
+
+    const token = jwt.sign(
+        { id: user.id, nome: user.nome },
+        SECRET,
+        { expiresIn: "1h" }
+    );
+
+    res.json({ token });
+});
+
+function auth(req, res, next) {
+    const header = req.headers.authorization;
+
+    if (!header) {
+        return res.status(401).json({ mensagem: "Token não fornecido" });
+    }
+
+    const token = header.split(" ")[1];
+
+    try {
+        const decoded = jwt.verify(token, SECRET);
+        req.user = decoded;
+        next();
+    } catch {
+        res.status(403).json({ mensagem: "Token inválido" });
+    }
+}
+
+app.put("/pokemons/:id", (req, res) => {
     const id = parseInt(req.params.id);
     const body = req.body;
 
-    const index = pokemons.findIndex( p =>{
-        return p.id === id;
-    });
+    const existing = db.prepare("SELECT * FROM pokemons WHERE id = ?").get(id);
 
-    if (index === -1) {
+    if (!existing) {
         return res.status(404).json({
             mensagem: "Pokemon não encontrado"
         });
     }
 
-    if (body.nome) pokemons[index].nome = body.nome;
-    if (body.tipo) pokemons[index].tipo = body.tipo;
-    if (body.altura_m) pokemons[index].altura_m = body.altura_m;
-    if (body.peso_kg) pokemons[index].peso_kg = body.peso_kg;
-    if (body.habilidades) pokemons[index].habilidades = body.habilidades;
-    if (body.geracao) pokemons[index].geracao = body.geracao;
+    db.prepare(`
+        UPDATE pokemons
+        SET nome = ?, tipo = ?, altura_m = ?, peso_kg = ?, habilidades = ?, geracao = ?
+        WHERE id = ?
+    `).run(
+        body.nome || existing.nome,
+        JSON.stringify(body.tipo || JSON.parse(existing.tipo)),
+        body.altura_m || existing.altura_m,
+        body.peso_kg || existing.peso_kg,
+        JSON.stringify(body.habilidades || JSON.parse(existing.habilidades)),
+        body.geracao || existing.geracao,
+        id
+    );
+
+    const updated = db.prepare("SELECT * FROM pokemons WHERE id = ?").get(id);
 
     res.json({
         mensagem: "Pokemon atualizado com sucesso",
-        pokemon: pokemons[index]
+        pokemon: {
+            ...updated,
+            tipo: JSON.parse(updated.tipo),
+            habilidades: JSON.parse(updated.habilidades)
+        }
     });
 });
 
 app.delete("/pokemons/:id", (req, res) => {
     const id = parseInt(req.params.id);
 
-    const index = pokemons.findIndex(p => p.id === id);
+    const existing = db.prepare("SELECT * FROM pokemons WHERE id = ?").get(id);
 
-    if (index === -1) {
+    if (!existing) {
         return res.status(404).json({
             mensagem: "Pokemon não encontrado"
         });
     }
 
-    const pokemonRemovido = pokemons[index];
-
-    pokemons.splice(index, 1);
+    db.prepare("DELETE FROM pokemons WHERE id = ?").run(id);
 
     res.json({
-        mensagem: "Pokemon removido com sucesso",
-        pokemon: pokemonRemovido
+        mensagem: "Pokemon removido com sucesso"
     });
 });
