@@ -1,32 +1,246 @@
-# ApiPokemons
+# API de Pokémons
 
-URL para acessar a api: http://localhost:3000/
+API REST desenvolvida com Node.js, Express e SQLite para gerenciamento de Pokémons, com autenticação JWT, filtros, relacionamentos e CRUD completo.
 
-http://localhost:3000/ -> Página inicial da API retorna "Olá"<br>
-http://localhost:3000/pokemons/ -> Página que retorna o JSON com todos os pokemons adicionados<br>
-http://localhost:3000/pokemons?nome=:nome -> Busca o pokemon por nome e retorna se ele existir<br>
-http://localhost:3000/pokemons?tipo=:tipo -> Filtra os pokemons por tipo e retorna um lista com todos eles<br>
-http://localhost:3000/pokemons?pesoMax=:peso_kg -> Filtra os pokemons por peso máximo e retorna uma lista com todos eles<br>
-http://localhost:3000/pokemons?pesoMin=:peso_kg -> Filtra os pokemons por peso mínimo e retorna uma lista com todos eles<br>
-http://localhost:3000/pokemons?altMax=:altura_m -> Filtra os pokemons por altura máxima e retorna uma lista com todos eles<br>
-http://localhost:3000/pokemons?altMin=:altura_m -> Filtra os pokemons por altura mínima e retorna uma lista com todos eles<br>
-http://localhost:3000/pokemons?habilidade=:habilidade -> Filtra os pokemons por habilidade e retorna uma lista com todos eles<br>
-http://localhost:3000/pokemons?geracao=:geracao -> Filtra os pokemons por geraão e retorna uma lista com todos eles<br>
+---
 
-Formato para guardar os pokemons:
-    {
-        "nome": nome,
-        "tipo": tipo,
-        "altura_m": altura_m,
-        "peso_kg": peso_kg,
-        "habilidades": habilidade,
-        "geracao": geracao
-    }
+# Tecnologias utilizadas
 
-exemplo de requisição no postman:<br>
-    <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/7a0d3e55-be74-4dc6-93d7-453fa320ced8" />
+* Node.js
+* Express
+* SQLite (better-sqlite3)
+* JWT (jsonwebtoken)
+* bcrypt
 
-exemplo da api funcionando:<br>
-    <img width="640" height="577" alt="image" src="https://github.com/user-attachments/assets/a5e4de61-616e-406c-bc3e-5ee4ef137431" />
+---
 
-o codigo possui um sistema de verificação que analisa se após passar pela filtragem do método get, verifica se o tamanho da lista é retornada é 0, ou seja, não encontrou nenhum pokemon com aquelas informações, se for, retorna uma mensagem avisando isso ao usuário
+# 📦 Instalação
+
+```bash
+git clone <seu-repositorio>
+cd api
+npm install
+```
+
+---
+
+# ▶️ Como rodar o projeto
+
+```bash
+node server.js
+```
+
+Servidor rodando em:
+
+```
+http://localhost:3000
+```
+
+---
+
+# Funcionalidades
+
+* CRUD completo de Pokémons
+* Filtros por nome, tipo e geração
+* Autenticação com JWT
+* Relacionamento entre usuários e pokémons favoritos (JOIN)
+* Proteção de rotas
+
+---
+
+# 🔐 Autenticação
+
+## Criar usuário
+
+```http
+POST /usuarios
+```
+
+Body:
+
+```json
+{
+  "nome": "frootz",
+  "senha": "123"
+}
+```
+
+---
+
+## Login
+
+```http
+POST /login
+```
+
+Body:
+
+```json
+{
+  "nome": "frootz",
+  "senha": "123"
+}
+```
+
+Resposta:
+
+```json
+{
+  "token": "SEU_TOKEN"
+}
+```
+
+---
+
+## ⚠️ Uso do Token
+
+Todas as rotas protegidas exigem:
+
+```
+Authorization: Bearer SEU_TOKEN
+```
+
+---
+
+# Rotas de Pokémons
+
+## Listar pokémons
+
+```http
+GET /pokemons
+```
+
+### Filtros:
+
+```http
+GET /pokemons?tipo=Water
+GET /pokemons?geracao=1
+GET /pokemons?nome=char
+```
+
+---
+
+## Criar pokémon
+
+```http
+POST /pokemons
+```
+
+Body:
+
+```json
+{
+  "nome": "Gyarados",
+  "tipo": ["Water", "Flying"],
+  "altura_m": 6.5,
+  "peso_kg": 235,
+  "habilidades": ["Intimidate", "Moxie"],
+  "geracao": 1
+}
+```
+
+---
+
+## Atualizar pokémon
+
+```http
+PUT /pokemons/:id
+```
+
+---
+
+## Deletar pokémon
+
+```http
+DELETE /pokemons/:id
+```
+
+---
+
+# ⭐ Favoritos (ROTAS PROTEGIDAS)
+
+## Adicionar favorito
+
+```http
+POST /favoritos
+```
+
+Header:
+
+```
+Authorization: Bearer SEU_TOKEN
+```
+
+Body:
+
+```json
+{
+  "pokemon_id": 1
+}
+```
+
+---
+
+## Listar favoritos
+
+```http
+GET /usuarios/:id/favoritos
+```
+
+Header:
+
+```
+Authorization: Bearer SEU_TOKEN
+```
+
+---
+
+# 🔗 Relacionamento
+
+A API utiliza relacionamento entre tabelas:
+
+* usuarios
+* pokemons
+* favoritos
+
+Utilizando JOIN para buscar os favoritos de um usuário.
+
+---
+
+# Status Codes
+
+* 200 → Sucesso
+* 201 → Criado com sucesso
+* 400 → Erro de requisição
+* 401 → Não autenticado
+* 403 → Token inválido
+* 404 → Não encontrado
+* 500 → Erro interno
+
+---
+
+# 📌 Observações
+
+* O token JWT expira em 1 hora
+* Senhas são armazenadas com hash (bcrypt)
+* Dados de tipo e habilidades são armazenados em formato JSON
+
+---
+
+## 📮 Testes com Postman
+
+Para testar a API:
+
+1. Faça login na rota `/login`
+2. Copie o token retornado
+3. Utilize o token no header:
+
+Authorization: Bearer SEU_TOKEN
+
+4. Teste as rotas protegidas como `/favoritos` e `/usuarios/:id/favoritos`
+
+---
+
+# Autor
+Gabriel Moreno
+Projeto desenvolvido para fins acadêmicos.
